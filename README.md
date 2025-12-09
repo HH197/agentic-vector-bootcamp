@@ -104,7 +104,8 @@ uv run --env-file .env gradio src/2_frameworks/1_react_rag/langfuse_gradio.py
 Multi-agent examples, also via the OpenAI Agent SDK.
 
 ```bash
-uv run --env-file .env gradio src/2_frameworks/2_multi_agent/efficient.py
+# uv run --env-file .env gradio src/2_frameworks/2_multi_agent/efficient.py
+uv run --env-file .env gradio src/2_frameworks/2_multi_agent/efficient_multiple_kbs.py
 # Verbose option- greater control over the agent flow, but less flexible.
 # uv run --env-file .env gradio src/2_frameworks/2_multi_agent/verbose.py
 ```

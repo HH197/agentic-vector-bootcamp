@@ -111,14 +111,25 @@ class AsyncWeaviateKnowledgeBase:
         for obj in response.objects:
             hit = {
                 "_source": {
-                    "title": obj.properties.get("title", ""),
-                    "section": obj.properties.get("section", None),
+                    "title": obj.properties.get("documentName", ""),
+                    "section": obj.properties.get("content", None),
+                    "url": obj.properties.get("url", None),
                 },
                 "highlight": {
-                    "text": [obj.properties.get("text", "")[: self.snippet_length]]
+                    "category": [obj.properties.get("documentcategory", "")[: self.snippet_length]]
                 },
             }
-            hits.append(hit)
+        # for obj in response.objects:
+        #     hit = {
+        #         "_source": {
+        #             "title": obj.properties.get("title", ""),
+        #             "section": obj.properties.get("section", None),
+        #         },
+        #         "highlight": {
+        #             "text": [obj.properties.get("text", "")[: self.snippet_length]]
+        #         },
+        #     }
+        #     hits.append(hit)
 
         return [_SearchResult.model_validate(_hit) for _hit in hits]
 

@@ -48,7 +48,7 @@ async_weaviate_client = get_weaviate_async_client(
 async_openai_client = AsyncOpenAI()
 async_knowledgebase = AsyncWeaviateKnowledgeBase(
     async_weaviate_client,
-    collection_name="cibc_2",
+    collection_name="cibc_2", #DORIA UPDATE
 )
 
 gemini_grounding_tool = GeminiGroundingWithGoogleSearch(
@@ -96,6 +96,7 @@ kb_agent = agents.Agent(
 # Main Agent: more expensive and slower, but better at complex planning
 main_agent = agents.Agent(
     name="MainAgent",
+    #DORIA UPDATE
     instructions="""
         You are a deep research agent and your goal is to conduct in-depth, multi-turn
         research by breaking down complex queries, using the provided tools, and
@@ -103,8 +104,8 @@ main_agent = agents.Agent(
 
         You have access to the following tools:
         1. 'search_knowledgebase' - use this tool to search for information in a
-            knowledge base. The knowledge base reflects a subset of Wikipedia as
-            of May 2025.
+            knowledge base. The knowledge base reflects a set of CIBC credit cards 
+            information.
         2. 'get_web_search_grounded_response' - use this tool for current events,
             news, fact-checking or when the information in the knowledge base is
             not sufficient to answer the question.
@@ -132,7 +133,7 @@ main_agent = agents.Agent(
         - After collecting results, write the final answer from your own synthesis.
         - Add a "Sources" section listing unique sources, formatted as:
             [1] Publisher - URL
-            [2] Wikipedia: <Page Title> (Section: <section>)
+            [2] Credit Card Name: <DocumentName> (Section: <section>)
           Order by first mention in your text. Every factual sentence in your final
           response must map to at least one source.
         - If web and knowledge base disagree, surface the disagreement and prefer sources
@@ -184,10 +185,8 @@ demo = gr.ChatInterface(
     title="2.3 Multi-Agent with Multiple Search Tools",
     type="messages",
     examples=[
-        "At which university did the SVP Software Engineering"
-        " at Apple (as of June 2025) earn their engineering degree?",
-        "How does the annual growth in the 50th-percentile income "
-        "in the US compare with that in Canada?",
+        "What travel credit cards does CIBC provide?",
+        "Please summarize the interest rates of CIBC travel credit cards",
     ],
 )
 
