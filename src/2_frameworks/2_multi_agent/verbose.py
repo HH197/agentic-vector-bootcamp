@@ -151,7 +151,7 @@ async def _main(question: str, gr_messages: list[ChatMessage]):
         instructions=RESEARCHER_INSTRUCTIONS,
         tools=[agents.function_tool(async_knowledgebase.search_knowledgebase)],
         model=agents.OpenAIChatCompletionsModel(
-            model="gemini-2.5-flash-lite-preview-06-17",
+            model="gemini-2.5-flash-lite",
             openai_client=async_openai_client,
         ),
         model_settings=agents.ModelSettings(tool_choice="required"),
@@ -231,7 +231,7 @@ if __name__ == "__main__":
     async_openai_client = AsyncOpenAI()
     setup_langfuse_tracer()
 
-    with gr.Blocks(title="OAI Agent SDK - Multi-agent") as app:
+    with gr.Blocks(title="OAI Agent SDK - Multi-agent") as demo:
         chatbot = gr.Chatbot(type="messages", label="Agent", height=600)
         chat_message = gr.Textbox(lines=1, label="Ask a question")
         chat_message.submit(_main, [chat_message, chatbot], [chatbot])
@@ -239,6 +239,6 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, _handle_sigint)
 
     try:
-        app.launch(server_name="0.0.0.0")
+        demo.launch(share=True)
     finally:
         asyncio.run(_cleanup_clients())
