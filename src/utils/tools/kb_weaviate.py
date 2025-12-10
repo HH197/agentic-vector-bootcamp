@@ -92,7 +92,6 @@ class AsyncWeaviateKnowledgeBase:
             If Weaviate is not ready to accept requests (HTTP 503).
 
         """
-        print("here")
         async with self.async_client:
             if not await self.async_client.is_ready():
                 raise Exception("Weaviate is not ready to accept requests (HTTP 503).")
@@ -120,8 +119,6 @@ class AsyncWeaviateKnowledgeBase:
                 },
             }
             hits.append(hit)
-
-        print(hits)
 
         return [_SearchResult.model_validate(_hit) for _hit in hits]
 
