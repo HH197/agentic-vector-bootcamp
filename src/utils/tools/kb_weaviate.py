@@ -111,11 +111,11 @@ class AsyncWeaviateKnowledgeBase:
         for obj in response.objects:
             hit = {
                 "_source": {
-                    "title": obj.properties.get("title", ""),
-                    "section": obj.properties.get("section", None),
+                    "title": obj.properties.get("documentName", ""),
+                    "section": obj.properties.get("uRL", ""),
                 },
                 "highlight": {
-                    "text": [obj.properties.get("text", "")[: self.snippet_length]]
+                    "text": [obj.properties.get("content", "")[: self.snippet_length]]
                 },
             }
             hits.append(hit)
