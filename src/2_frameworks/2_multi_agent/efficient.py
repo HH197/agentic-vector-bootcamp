@@ -136,11 +136,6 @@ async def _main(question: str, gr_messages: list[ChatMessage]):
             if len(gr_messages) > 0:
                 yield gr_messages
 
-            # # avoid duplicates
-            # if new_msgs:
-            #     gr_messages.extend(new_msgs)
-            #     yield gr_messages
-
         span.update(output=result_stream.final_output)
 
 
@@ -155,9 +150,6 @@ demo = gr.ChatInterface(
 )
 
 if __name__ == "__main__":
-
-    # key_value = os.getenv("WEAVIATE_API_KEY")
-    # print("Value of YOUR_KEY:", key_value)
     
     async_openai_client = AsyncOpenAI()
 
