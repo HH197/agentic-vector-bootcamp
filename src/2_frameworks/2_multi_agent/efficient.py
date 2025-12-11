@@ -11,13 +11,14 @@ import contextlib
 import signal
 import sys
 
+import os
 import agents
 import gradio as gr
 from dotenv import load_dotenv
 from gradio.components.chatbot import ChatMessage
 from openai import AsyncOpenAI
 
-from src.prompts import REACT_INSTRUCTIONS
+from src.prompts import REACT_INSTRUCTIONS, RETRIEVER_INSTRUCTIONS, PLANNER_INSTRUCTIONS
 from src.utils import (
     AsyncWeaviateKnowledgeBase,
     Configs,
@@ -51,7 +52,7 @@ async_weaviate_client = get_weaviate_async_client(
 async_openai_client = AsyncOpenAI()
 async_knowledgebase = AsyncWeaviateKnowledgeBase(
     async_weaviate_client,
-    collection_name="enwiki_20250520",
+    collection_name="cibc_2",
 )
 
 
@@ -67,14 +68,14 @@ def _handle_sigint(signum: int, frame: object) -> None:
         asyncio.get_event_loop().run_until_complete(_cleanup_clients())
     sys.exit(0)
 
+#----------------------------agents------------------
 
 # Worker Agent: handles long context efficiently
-search_agent = agents.Agent(
-    name="SearchAgent",
+worker_agent = agents.Agent(
+    name="WorkerAgent",
     instructions=(
-        "You are a search agent. You receive a single search query as input. "
-        "Use the search tool to perform a search, then produce a concise "
-        "'search summary' of the key findings. Do NOT return raw search results."
+        "You perform a single knowledge search query using the knowledgebase tool "
+        "and return raw search results. Do NOT summarize; the retriever will handle that."
     ),
     tools=[
         agents.function_tool(async_knowledgebase.search_knowledgebase),
@@ -85,16 +86,32 @@ search_agent = agents.Agent(
     ),
 )
 
+# Retriever Agent: orchestrates multiple queries and cleaning
+retriever_agent = agents.Agent(
+    name="RetrieverAgent",
+    instructions=RETRIEVER_INSTRUCTIONS,
+    tools=[
+        worker_agent.as_tool(
+            tool_name="kb_search",
+            tool_description="Run a knowledge base query and return raw results."
+        )
+    ],
+    model=agents.OpenAIChatCompletionsModel(
+        model=AGENT_LLM_NAMES["worker"],
+        openai_client=async_openai_client
+    ),
+)
+
 # Main Agent: more expensive and slower, but better at complex planning
 main_agent = agents.Agent(
     name="MainAgent",
-    instructions=REACT_INSTRUCTIONS,
+    instructions=PLANNER_INSTRUCTIONS,
     # Allow the planner agent to invoke the worker agent.
     # The long context provided to the worker agent is hidden from the main agent.
     tools=[
-        search_agent.as_tool(
-            tool_name="search",
-            tool_description="Perform a web search for a query and return a concise summary.",
+        retriever_agent.as_tool(
+            tool_name="retrieve",
+            tool_description="Retrieve multiple relevant snippets from the KB."
         )
     ],
     # a larger, more capable model for planning and reasoning over summaries
@@ -103,36 +120,45 @@ main_agent = agents.Agent(
     ),
 )
 
+#---------------------- end of agents -------------
 
 async def _main(question: str, gr_messages: list[ChatMessage]):
     setup_langfuse_tracer()
 
     # Use the main agent as the entry point- not the worker agent.
-    with langfuse_client.start_as_current_span(name="Agents-SDK-Trace") as span:
+    with langfuse_client.start_as_current_span(name="Agents-SDK-Trace2") as span:
         span.update(input=question)
 
         result_stream = agents.Runner.run_streamed(main_agent, input=question)
+
         async for _item in result_stream.stream_events():
             gr_messages += oai_agent_stream_to_gradio_messages(_item)
             if len(gr_messages) > 0:
                 yield gr_messages
+
+            # # avoid duplicates
+            # if new_msgs:
+            #     gr_messages.extend(new_msgs)
+            #     yield gr_messages
 
         span.update(output=result_stream.final_output)
 
 
 demo = gr.ChatInterface(
     _main,
-    title="2.2 Multi-Agent for Efficiency",
+    title="CIBC: Smart Server",
     type="messages",
     examples=[
-        "At which university did the SVP Software Engineering"
-        " at Apple (as of June 2025) earn their engineering degree?",
-        "How does the annual growth in the 50th-percentile income "
-        "in the US compare with that in Canada?",
+        "Introduce me of CIBC credit cards",
+        "Which CIBC credit cards are best for students?",
     ],
 )
 
 if __name__ == "__main__":
+
+    # key_value = os.getenv("WEAVIATE_API_KEY")
+    # print("Value of YOUR_KEY:", key_value)
+    
     async_openai_client = AsyncOpenAI()
 
     signal.signal(signal.SIGINT, _handle_sigint)
