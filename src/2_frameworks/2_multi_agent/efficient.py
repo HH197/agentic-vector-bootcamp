@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 from gradio.components.chatbot import ChatMessage
 from openai import AsyncOpenAI
 
-from src.prompts import REACT_INSTRUCTIONS, RETRIEVER_INSTRUCTIONS, PLANNER_INSTRUCTIONS
+from src.prompts import RETRIEVER_INSTRUCTIONS, PLANNER_INSTRUCTIONS
 from src.utils import (
     AsyncWeaviateKnowledgeBase,
     Configs,
@@ -74,8 +74,16 @@ def _handle_sigint(signum: int, frame: object) -> None:
 worker_agent = agents.Agent(
     name="WorkerAgent",
     instructions=(
-        "You perform a single knowledge search query using the knowledgebase tool "
-        "and return raw search results. Do NOT summarize; the retriever will handle that."
+        """
+        You are the Worker Agent.
+        Your only job:
+        - Execute EXACTLY ONE search_knowledgebase query.
+        - Return the raw search results EXACTLY as the tool gives them.
+        - Do NOT summarize, analyze, or add your own financial details.
+        - Do NOT hallucinate missing fields.
+        - Do NOT rewrite or alter retrieved text.
+        Output = the tool output only.
+        """
     ),
     tools=[
         agents.function_tool(async_knowledgebase.search_knowledgebase),
